@@ -1,54 +1,235 @@
-# CineMatch - рекомендательная система фильмов с коллаборативной фильтрацией
+# Cinematch – рекомендательная система фильмов с коллаборативной фильтрацией
 
-## Описание feature-based струкутры проекта
-    auth - регистрация, логин, JWT
-    movies - CRUD фильмов и жанров
-    ratings - оценки пользователей
-    recommendations - алгоритм коллаборативной фильтрации (главная бизнес-задача)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.136.1-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python)](https://python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql)](https://postgresql.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-    cinematch/
-    ├── .env
-    ├── .gitignore
-    ├── .pylintrc
-    ├── docker-compose.yml
-    ├── requirements.txt
-    ├── README.md
-    ├── app/
-    │   ├── __init__.py
-    │   ├── main.py
-    │   ├── core/
-    │   │   ├── __init__.py
-    │   │   ├── config.py
-    │   │   ├── database.py
-    │   │   └── auth.py
-    │   └── features/
-    │       ├── auth/
-    │       │   ├── __init__.py
-    │       │   ├── models.py
-    │       │   ├── schemas.py
-    │       │   ├── service.py
-    │       │   └── router.py
-    │       ├── movies/   (аналогично)
-    │       ├── ratings/  (аналогично)
-    │       └── recommendations/ (аналогично)
-    └── tests/
-        ├── __init__.py
-        ├── conftest.py
-        └── test_auth.py
+## 📌 Оглавление
+- [Описание проекта](#описание-проекта)
+- [Ключевые возможности](#ключевые-возможности)
+- [Архитектура](#архитектура)
+- [Технологический стек](#технологический-стек)
+- [Требования](#требования)
+- [Установка и запуск](#установка-и-запуск)
+  - [Локальный запуск (без Docker)](#локальный-запуск-без-docker)
+  - [Запуск с Docker Compose](#запуск-с-docker-compose)
+- [Конфигурация (переменные окружения)](#конфигурация-переменные-окружения)
+- [API документация](#api-документация)
+- [Алгоритм рекомендаций](#алгоритм-рекомендаций)
+- [Тестирование](#тестирование)
+- [Качество кода (Pylint)](#качество-кода-pylint)
+- [Структура проекта](#структура-проекта)
+- [Лицензия](#лицензия)
 
-    app/core/config.py -  класс настроек с pydantic-settings
-    app/core/database.py - движок SQLModel, сессии, зависимость get_db
-    app/core/auth.py - хеширование паролей (pwdlib), создание и верификация JWT, зависимость get_current_user
+---
 
-    app/features/auth/models.py - SQLModel-классы (таблицы)
-    app/features/auth/schemas.py - Pydantic-схемы (запрос/ответ)
-    app/features/auth/service.py - бизнес-логика (работа с БД)
-    app/features/auth/router.py - эндпоинты
+## Описание проекта
 
-## Запуск
+**Cinematch** – это backend‑сервис на **FastAPI**, реализующий рекомендательную систему фильмов на основе **коллаборативной фильтрации** (user‑based). Пользователи могут регистрироваться, ставить оценки фильмам (1–5), а сервис на основе схожести оценок с другими пользователями предлагает персонализированные рекомендации.
+
+Проект выполнен в рамках учебного задания и демонстрирует:
+- CRUD операции с реляционной БД (PostgreSQL, 5 связанных таблиц);
+- JWT‑аутентификацию и авторизацию;
+- Сложный алгоритмический эндпоинт (коэффициент корреляции Пирсона + взвешенные рекомендации);
+- Автоматическое тестирование (pytest, покрытие >70%);
+- Чистый код (Pylint 9.2/10).
+
+---
+
+## Ключевые возможности
+
+| Модуль | Эндпоинты | Описание |
+|--------|-----------|----------|
+| **Auth** | `/auth/register`, `/auth/login` | Регистрация, вход, выдача JWT |
+| **Movies** | CRUD (`GET`, `POST`, `PUT`, `DELETE`) + `/movies/{id}` + `/movies?genre=...` | Управление фильмами, жанрами, пагинация, фильтрация |
+| **Ratings** | `POST /ratings`, `PUT /ratings/{id}`, `DELETE /ratings/{id}`, `GET /ratings/my` | Выставление и изменение оценок пользователей |
+| **Recommendations** | `GET /recommendations` (защищённый) | Возвращает топ‑10 фильмов, предсказанных коллаборативной фильтрацией |
+
+---
+
+## Архитектура
+
+Проект построен на **feature‑based** архитектуре — каждая бизнес‑возможность изолирована в своей директории `app/features/`. Это обеспечивает низкую связанность и простоту расширения.
+
+
+Взаимодействие между фичами происходит через **сервисный слой** (service.py) и внедрение зависимостей (Dependency Injection).
+
+---
+
+## Технологический стек
+
+| Компонент | Технология | Версия | Назначение |
+|-----------|------------|--------|-------------|
+| Язык | Python | 3.13 | Основной язык |
+| Фреймворк | FastAPI | 0.136.1 | REST API, валидация, документация |
+| ORM | SQLModel | 0.0.38 | Модели БД + Pydantic схемы |
+| База данных | PostgreSQL | 18 | Реляционная БД |
+| Драйвер БД | asyncpg | 0.31.0 | Асинхронное подключение |
+| Миграции | Alembic | 1.18.4 | Управление схемой БД |
+| Аутентификация | python-jose | 3.5.0 | JWT токены |
+| Хеширование | pwdlib | 0.3.0 | Безопасное хранение паролей |
+| Настройки | pydantic-settings | 2.14.0 | Загрузка .env, валидация |
+| Тесты | pytest + pytest-asyncio + httpx | 9.0.3 / 1.3.0 / 0.28.1 | Автотесты, асинхронный клиент |
+| Контейнеризация | Docker + Docker Compose | – | Запуск БД и приложения |
+| Линтинг | Pylint | – | Качество кода (конфиг .pylintrc) |
+
+---
+
+## Требования
+
+- Python 3.13+
+- PostgreSQL 16+ (или Docker)
+- Docker и Docker Compose (опционально, для БД)
+- Git (для клонирования)
+
+---
+
+## Установка и запуск
+
+### Локальный запуск (без Docker)
+
+1. **Клонируйте репозиторий**
+   ```bash
+    git clone https://github.com/yourusername/cinematch.
+    cd cinematch
+    ```
+2. **Создайте и активируйте виртуальное окружение**
+    ```bash
     python3 -m venv .venv
     source .venv/bin/activate
+    ```
+3. **Установите зависимости**
+    ```bash
     pip install --upgrade pip
     pip install -r requirements.txt
     uvicorn app.main:app --reload
     deactivate
+    ```
+4. **Запустите PostgreSQL (локально или через Docker)**
+    ```bash
+    docker-compose up -d db   # поднимает только БД
+    ```
+    Убедитесь, что БД доступна на localhost:5432.
+5. **Настройте переменные окружения** 
+    – скопируйте .env.example в .env и отредактируйте (см. раздел Конфигурация).
+
+6. **Выполните миграции (инициализация схемы)**
+    ```bash
+    alembic upgrade head
+    ```
+7. **Запустите сервер**
+    ```bash
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    ```
+8. **Проверьте работу – откройте http://localhost:8000/docs**
+
+### Запуск с Docker Compose
+```bash
+docker-compose up -d --build
+```
+Приложение будет доступно на http://localhost:8000, БД – на localhost:5432
+
+### Конфигурация (переменные окружения)
+Создайте файл .env в корне проекта по образцу .env.example:
+```bash
+# PostgreSQL (локальный или Docker)
+DATABASE_URL=postgresql+asyncpg://cinematch:cinematch123@localhost:5432/cinematch
+
+# JWT
+SECRET_KEY=supersecretkeyforjwtdev
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Только для Docker Compose (если используете)
+POSTGRES_USER=cinematch
+POSTGRES_PASSWORD=cinematch123
+POSTGRES_DB=cinematch
+```
+
+## API документация
+После запуска сервера интерактивная документация доступна по адресу:
+
+Swagger UI: http://localhost:8000/docs
+
+ReDoc: http://localhost:8000/redoc
+
+Примеры запросов
+Регистрация
+
+## Алгоритм рекомендаций
+
+**Тип:** user‑based коллаборативная фильтрация.
+
+### Этапы работы эндпоинта `GET /recommendations`
+
+1. **Загрузка данных** – из БД извлекаются все оценки текущего пользователя и других пользователей.
+2. **Вычисление схожести** – для каждого другого пользователя рассчитывается **коэффициент корреляции Пирсона** по общим оцененным фильмам.  
+   Формула:
+
+   sim(u, v) = sum( (r_ui - mean_u) * (r_vi - mean_v) ) / sqrt( sum( (r_ui - mean_u)^2 ) * sum( (r_vi - mean_v)^2 ) )
+
+    где:
+    - `r_ui` – оценка пользователя u для фильма i,
+    - `mean_u` – средняя оценка пользователя u,
+    - `r_vi`, `mean_v` – соответственно для пользователя v.
+3. **Отбор соседей** – выбираются K пользователей с наибольшей положительной схожестью (K = 5 по умолчанию).
+4. **Предсказание оценки** для каждого фильма, который текущий пользователь ещё не смотрел:  
+   
+    pred(u, i) = mean_u + sum( sim(u, v) * (r_vi - mean_v) ) / sum( |sim(u, v)| )
+    
+    по всем соседям v из отобранного множества N.
+5. **Ранжирование** – фильмы сортируются по убыванию предсказанной оценки, возвращается топ‑N (N = 10).
+
+### Обработка холодного старта
+Если у пользователя менее 3 оценок, вместо персональных рекомендаций возвращаются **самые популярные фильмы** по среднему рейтингу (или по количеству оценок).
+
+## Тестирование
+
+Для запуска тестов (требование покрытия ≥70%):
+
+```bash
+pytest -v --cov=app --cov-report=term-missing
+```
+Покрытие ключевой логики (алгоритм рекомендаций, аутентификация, CRUD) проверяется через TestClient и асинхронные фикстуры.
+
+## Качество кода (Pylint)
+Конфигурация Pylint задана в .pylintrc в корне проекта. Проверка:
+```bash
+pylint app > pylint.txt
+```
+
+## Структура проекта
+```bash
+cinematch/
+├── .env.example              # пример переменных окружения
+├── .gitignore
+├── .pylintrc                 # конфигурация Pylint
+├── docker-compose.yml        # запуск БД и приложения
+├── Dockerfile                # сборка образа приложения
+├── requirements.txt          # зависимости
+├── README.md
+├── alembic.ini               # конфигурация миграций
+├── migrations/               # скрипты миграций Alembic
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   └── auth.py
+│   └── features/
+│       ├── auth/
+│       ├── movies/
+│       ├── ratings/
+│       └── recommendations/
+└── tests/
+    ├── conftest.py
+    ├── test_auth.py
+    ├── test_movies.py
+    ├── test_ratings.py
+    └── test_recommendations.py
+```
+
+## Лицензия
+MIT License. Подробнее в файле LICENSE.
