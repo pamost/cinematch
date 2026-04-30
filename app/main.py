@@ -1,7 +1,26 @@
 """Cinematch FastAPI application entry point."""
-from fastapi import FastAPI
 
-app = FastAPI(title="CineMatch", version="1.0.0")
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from app.core.database import init_db
+from app.features.auth.router import router as auth_router
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):  # переименовали, чтобы избежать конфликта
+    """Handle startup and shutdown events."""
+    await init_db()
+    yield
+
+
+app = FastAPI(
+    title="Cinematch",
+    description="Collaborative filtering movie recommendations",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
