@@ -103,8 +103,6 @@
     ```bash
     pip install --upgrade pip
     pip install -r requirements.txt
-    uvicorn app.main:app --reload
-    deactivate
     ```
 4. **Запустите PostgreSQL (локально или через Docker)**
     ```bash
