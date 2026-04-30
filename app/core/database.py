@@ -8,7 +8,7 @@ from app.core.config import settings
 
 # Асинхронный движок для подключения к БД
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.database_url,
     echo=True,
     future=True
 )

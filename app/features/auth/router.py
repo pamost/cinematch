@@ -11,16 +11,24 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserOut)
 async def register(user_data: UserCreate, session: AsyncSession = Depends(get_session)):
+    """Register a new user."""
     existing = await authenticate_user(session, user_data.username, user_data.password)
     if existing:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
     user = await create_user(session, user_data.username, user_data.password)
     return user
 
 @router.post("/login", response_model=Token)
 async def login(user_data: UserCreate, session: AsyncSession = Depends(get_session)):
+    """Login user and return JWT token."""
     user = await authenticate_user(session, user_data.username, user_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
     access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
