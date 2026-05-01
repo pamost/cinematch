@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.core.database import init_db
 from app.features.auth.router import router as auth_router
+from app.features.movies.router import router as movies_router
 
 
 @asynccontextmanager
@@ -21,6 +22,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router)
+app.include_router(movies_router)
 
 @app.get("/")
 async def root():
