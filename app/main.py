@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.core.database import init_db
 from app.features.auth.router import router as auth_router
 from app.features.movies.router import router as movies_router
+from app.features.ratings.router import router as ratings_router
 
 
 @asynccontextmanager
@@ -15,7 +16,7 @@ async def lifespan(_app: FastAPI):  # переименовали, чтобы и�
 
 
 app = FastAPI(
-    title="Cinematch",
+    title="CineMatch",
     description="Collaborative filtering movie recommendations",
     version="1.0.0",
     lifespan=lifespan
@@ -23,6 +24,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(movies_router)
+app.include_router(ratings_router)
 
 @app.get("/")
 async def root():
