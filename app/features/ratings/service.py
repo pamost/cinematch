@@ -1,8 +1,8 @@
 """Business logic for ratings feature."""
 
-from typing import List, Optional
+from typing import List
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, delete
+from sqlmodel import select
 from app.features.ratings.models import Rating
 from app.features.ratings.schemas import RatingCreate, RatingUpdate
 
