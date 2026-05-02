@@ -63,18 +63,14 @@ async def get_most_popular_movies(session: AsyncSession, limit: int = 10) -> Lis
     return [movie for movie, _ in movies_with_avg]
 
 
-async def _get_similar_users(
-    session: AsyncSession,
+def _get_similar_users_from_ratings(
     user_id: int,
+    user_ratings: Dict[int, float],
+    all_ratings: Dict[int, Dict[int, float]],
     similarity_threshold: float,
     k_neighbors: int
 ) -> List[Tuple[int, float]]:
-    """Return list of (user_id, similarity) for top neighbors."""
-    user_ratings = await get_user_ratings(session, user_id)
-    if len(user_ratings) < 3:
-        return []
-
-    all_ratings = await get_all_users_ratings(session)
+    """Return list of (user_id, similarity) for top neighbors (synchronous, no DB calls)."""
     other_users = {uid: r for uid, r in all_ratings.items() if uid != user_id}
 
     sims = []
@@ -123,8 +119,8 @@ async def get_top_n_recommendations(
         return [(m, 0.0) for m in movies]
 
     all_ratings = await get_all_users_ratings(session)
-    similar_users = await _get_similar_users(
-        session, user_id, similarity_threshold, k_neighbors
+    similar_users = _get_similar_users_from_ratings(
+        user_id, user_ratings, all_ratings, similarity_threshold, k_neighbors
     )
     if not similar_users:
         movies = await get_most_popular_movies(session, n)

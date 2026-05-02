@@ -1,3 +1,6 @@
 [MASTER]
 
 [MESSAGES CONTROL]
+# R0903: too-few-public-methods — тестовые классы часто имеют 1 метод
+# R0801: duplicate-code — в тестах часто повторяется boilerplate
+disable=R0903,R0801

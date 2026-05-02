@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 # Genre schemas
@@ -21,10 +21,7 @@ class GenreResponse(GenreBase):
 
     id: int
 
-    class Config:
-        """Pydantic configuration: enable ORM mode."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Movie schemas
@@ -58,7 +55,4 @@ class MovieResponse(MovieBase):
     created_at: Optional[datetime] = None
     genres: List[GenreResponse] = []
 
-    class Config:
-        """Pydantic configuration: enable ORM mode."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

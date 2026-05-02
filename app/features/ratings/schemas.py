@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class RatingBase(BaseModel):
@@ -29,7 +29,4 @@ class RatingResponse(RatingBase):  # pylint: disable=too-few-public-methods
     movie_id: int
     created_at: Optional[datetime] = None
 
-    class Config:
-        """Pydantic configuration: enable ORM mode."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

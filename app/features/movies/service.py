@@ -97,7 +97,8 @@ async def create_movie(session: AsyncSession, movie_data: MovieCreate) -> Movie:
             if genre:
                 session.add(MovieGenre(movie_id=movie.id, genre_id=genre.id))
         await session.commit()
-        await session.refresh(movie, attribute_names=["genres"])
+
+    await session.refresh(movie, attribute_names=["genres"])
     return movie
 
 
