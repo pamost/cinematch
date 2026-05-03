@@ -1,5 +1,3 @@
-# app/features/recommendations/service.py
-
 """Collaborative filtering recommendation logic."""
 
 import math
@@ -101,8 +99,10 @@ async def _compute_predictions(
         num = sum(r * s for r, s in val)
         den = sum(s for _, s in val)
         if den > 0:
-            predictions[movie_id] = num / den
+            predictions[movie_id] = round(num / den, 2)
+
     return predictions
+
 
 
 async def get_top_n_recommendations(
