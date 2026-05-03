@@ -1,7 +1,9 @@
-"""Database engine and session dependency."""
+"""Database engine and session dependency.
+
+Схема БД управляется через Alembic (alembic upgrade head).
+"""
 
 from typing import AsyncGenerator
-from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.core.config import settings
@@ -14,7 +16,7 @@ engine = create_async_engine(
 )
 
 # Фабрика сессий
-AsyncSessionLocal = async_sessionmaker(
+ASYNC_SESSION_LOCAL = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False
@@ -23,11 +25,5 @@ AsyncSessionLocal = async_sessionmaker(
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting async database session."""
-    async with AsyncSessionLocal() as session:
+    async with ASYNC_SESSION_LOCAL() as session:
         yield session
-
-
-async def init_db():
-    """Create all tables (for development only)."""
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)

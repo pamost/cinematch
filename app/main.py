@@ -2,7 +2,6 @@
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.core.database import init_db
 from app.features.auth.router import router as auth_router
 from app.features.movies.router import router as movies_router
 from app.features.ratings.router import router as ratings_router
@@ -10,9 +9,13 @@ from app.features.recommendations.router import router as recommendations_router
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):  # переименовали, чтобы избежать конфликта
-    """Handle startup and shutdown events."""
-    await init_db()
+async def lifespan(_app: FastAPI):
+    """Handle startup and shutdown events.
+
+    Внимание: схема БД теперь управляется через Alembic (alembic upgrade head).
+    Перед первым запуском примените миграции:
+        alembic upgrade head
+    """
     yield
 
 

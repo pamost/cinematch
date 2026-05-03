@@ -2,6 +2,7 @@ fastapi[standard]==0.136.1
 sqlmodel==0.0.38
 asyncpg==0.31.0
 alembic==1.18.4
+psycopg2-binary==2.9.10
 pydantic==2.13.3
 pydantic-settings==2.14.0
 pwdlib[argon2]==0.3.0

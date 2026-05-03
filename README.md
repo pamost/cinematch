@@ -182,7 +182,79 @@ ReDoc: http://localhost:8000/redoc
 ### Обработка холодного старта
 Если у пользователя менее 3 оценок, вместо персональных рекомендаций возвращаются **самые популярные фильмы** по среднему рейтингу (или по количеству оценок).
 
+## Миграции БД (Alembic)
+
+Для управления схемой базы данных используется **Alembic**.
+
+### Инициализация
+
+Миграции уже настроены:
+- `alembic.ini` — основная конфигурация
+- `migrations/env.py` — асинхронный движок (asyncpg) для выполнения миграций
+- `migrations/versions/` — директория с файлами миграций
+
+### Команды
+
+```bash
+# Применить все миграции до последней
+alembic upgrade head
+
+# Откатить последнюю миграцию
+alembic downgrade -1
+
+# Откатить всё до нуля
+alembic downgrade base
+
+# Посмотреть историю миграций
+alembic history
+
+# Показать текущую версию
+alembic current
+
+# Сгенерировать новую миграцию (autogenerate)
+# Сравнивает SQLModel.metadata с реальной БД
+alembic revision --autogenerate -m "description"
+
+# Создать пустую миграцию (для ручного написания)
+alembic revision -m "description"
+
+# Просмотреть SQL, который выполнит миграция (offline-режим)
+alembic upgrade head --sql
+```
+
+### Первая миграция
+
+Начальная миграция (`0001_init`) создана вручную в файле:
+`migrations/versions/20260503_initial_schema.py`
+
+Она создаёт таблицы: `users`, `movies`, `genres`, `movie_genres`, `ratings`.
+
+Чтобы применить её, выполните:
+```bash
+alembic upgrade head
+```
+
+### Создание новой миграции при изменении моделей
+
+1. Измените SQLModel-модели в `app/features/*/models.py`
+2. Сгенерируйте миграцию:
+   ```bash
+   alembic revision --autogenerate -m "add field to movies"
+   ```
+3. Проверьте сгенерированный файл в `migrations/versions/`
+4. Примените:
+   ```bash
+   alembic upgrade head
+   ```
+
+> **Важно:** `env.py` импортирует все модели, поэтому `--autogenerate` корректно определяет изменения.
+
+### Зависимости
+
+Для работы Alembic с async-движком требуется **psycopg2-binary** (синхронный драйвер для DDL-команд). Уже добавлен в `requirements.txt`.
+
 ## Тестирование
+
 
 Для запуска тестов (требование покрытия ≥70%):
 

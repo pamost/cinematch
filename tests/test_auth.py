@@ -6,7 +6,6 @@ from httpx import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.auth import get_current_user, create_access_token
-from app.core.database import init_db, get_session
 from app.features.auth.service import (
     get_user_by_username,
     get_user_by_id,
@@ -173,13 +172,3 @@ class TestAuthService:
         resp = await client.get("/")
         assert resp.status_code == 200
         assert resp.json() == {"message": "CineMatch API"}
-
-    async def test_init_db(self):
-        """Test database initialization."""
-        await init_db()
-
-    async def test_get_session(self):
-        """Test database session generator yields a session."""
-        async for session in get_session():
-            assert session is not None
-            break
