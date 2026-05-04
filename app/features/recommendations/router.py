@@ -18,12 +18,12 @@ async def get_recommendations(
     current_user: User = Depends(get_current_user),
 ):
     """Get movie recommendations for current user."""
-    # Вызываем сервис, который возвращает список (Movie, predicted_rating)
+    # Вызываем сервис, который возвращает список (Movie, predicted_rating, reason)
     movies_with_ratings = await rec_service.get_top_n_recommendations(
         session, current_user.id, n=limit
     )
     # Преобразуем в список RecommendedMovie
     return [
-        RecommendedMovie(id=m.id, title=m.title, predicted_rating=r, reason=None)
-        for m, r in movies_with_ratings
+        RecommendedMovie(id=m.id, title=m.title, predicted_rating=r, reason=reason)
+        for m, r, reason in movies_with_ratings
     ]

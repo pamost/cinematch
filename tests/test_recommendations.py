@@ -113,16 +113,17 @@ class TestRecommendationsService:
         assert movies == []
 
     async def test_get_most_popular_movies_with_data(self, db_session: AsyncSession):
-        """get_most_popular_movies returns movies with ratings."""
+        """get_most_popular_movies returns (movie, avg_rating) tuples."""
         user = await create_user(db_session, "recuser", "pass")
         movie_data = MovieCreate(title="Popular Movie")
         movie = await create_movie(db_session, movie_data)
         rating_data = RatingCreate(movie_id=movie.id, rating=5)
         await create_rating(db_session, user.id, rating_data)
 
-        movies = await get_most_popular_movies(db_session, 5)
-        assert len(movies) == 1
-        assert movies[0].title == "Popular Movie"
+        popular = await get_most_popular_movies(db_session, 5)
+        assert len(popular) == 1
+        assert popular[0][0].title == "Popular Movie"
+        assert popular[0][1] == 5.0
 
     async def test_get_similar_users(self):
         """_get_similar_users_from_ratings finds similar users."""

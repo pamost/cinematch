@@ -46,8 +46,11 @@ def pearson_correlation(
     return 0.0 if den1 == 0 or den2 == 0 else num / (den1 * den2)
 
 
-async def get_most_popular_movies(session: AsyncSession, limit: int = 10) -> List[Movie]:
-    """Return top-rated movies by average rating (used for cold start)."""
+async def get_most_popular_movies(session: AsyncSession, limit: int = 10) -> List[Tuple[Movie, float]]:
+    """Return top-rated movies by average rating (used for cold start).
+
+    Returns list of (movie, avg_rating) tuples.
+    """
     stmt = (
         select(Movie, func.avg(Rating.rating).label("avg_rating"))
         .join(Rating, Movie.id == Rating.movie_id)
@@ -57,8 +60,7 @@ async def get_most_popular_movies(session: AsyncSession, limit: int = 10) -> Lis
     )
     result = await session.exec(stmt)
     movies_with_avg = result.all()
-    # Просто возвращаем фильмы, у которых есть оценки
-    return [movie for movie, _ in movies_with_avg]
+    return [(movie, round(avg, 2)) for movie, avg in movies_with_avg]
 
 
 def _get_similar_users_from_ratings(
@@ -111,30 +113,33 @@ async def get_top_n_recommendations(
     n: int = 10,
     similarity_threshold: float = 0.0,
     k_neighbors: int = 5
-) -> List[Tuple[Movie, float]]:
-    """Return list of (movie, predicted_rating) for top N recommendations."""
+) -> List[Tuple[Movie, float, str]]:
+    """Return list of (movie, predicted_rating, reason) for top N recommendations.
+
+    reason is either "popular" (cold start / fallback) or "collaborative" (CF).
+    """
     user_ratings = await get_user_ratings(session, user_id)
     if len(user_ratings) < 3:
-        movies = await get_most_popular_movies(session, n)
-        return [(m, 0.0) for m in movies]
+        popular = await get_most_popular_movies(session, n)
+        return [(m, r, "popular") for m, r in popular]
 
     all_ratings = await get_all_users_ratings(session)
     similar_users = _get_similar_users_from_ratings(
         user_id, user_ratings, all_ratings, similarity_threshold, k_neighbors
     )
     if not similar_users:
-        movies = await get_most_popular_movies(session, n)
-        return [(m, 0.0) for m in movies]
+        popular = await get_most_popular_movies(session, n)
+        return [(m, r, "popular") for m, r in popular]
 
     predictions = await _compute_predictions(user_ratings, all_ratings, similar_users)
     if not predictions:
-        movies = await get_most_popular_movies(session, n)
-        return [(m, 0.0) for m in movies]
+        popular = await get_most_popular_movies(session, n)
+        return [(m, r, "popular") for m, r in popular]
 
     sorted_pred = sorted(predictions.items(), key=lambda x: x[1], reverse=True)[:n]
     result = []
     for movie_id, pred_rating in sorted_pred:
         movie = (await session.exec(select(Movie).where(Movie.id == movie_id))).one_or_none()
         if movie:
-            result.append((movie, pred_rating))
+            result.append((movie, pred_rating, "collaborative"))
     return result
