@@ -16,6 +16,12 @@ class GenreCreate(GenreBase):
     """Schema for creating a genre."""
 
 
+class GenreUpdate(BaseModel):
+    """Schema for updating a genre."""
+
+    name: str
+
+
 class GenreResponse(GenreBase):
     """Schema for returning a genre."""
 

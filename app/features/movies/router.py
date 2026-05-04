@@ -11,7 +11,7 @@ from app.features.auth.models import User
 from app.features.movies import service as movie_service
 from app.features.movies.schemas import (
     MovieCreate, MovieUpdate, MovieResponse,
-    GenreCreate, GenreResponse
+    GenreCreate, GenreUpdate, GenreResponse
 )
 
 router = APIRouter(prefix="/movies", tags=["movies"])
@@ -42,6 +42,35 @@ async def create_genre(
         raise HTTPException(status_code=400, detail="Genre already exists")
     genre = await movie_service.create_genre(session, genre_data.name)
     return genre
+
+
+@router.put("/genres/{genre_id}", response_model=GenreResponse)
+async def update_genre(
+    genre_id: int,
+    genre_data: GenreUpdate,
+    session: AsyncSession = Depends(get_session),
+    _user: User = Depends(get_current_user)
+):
+    """Update an existing genre."""
+    existing = await movie_service.get_genre_by_name(session, genre_data.name)
+    if existing and existing.id != genre_id:
+        raise HTTPException(status_code=400, detail="Genre name already taken")
+    genre = await movie_service.update_genre(session, genre_id, genre_data.name)
+    if not genre:
+        raise HTTPException(status_code=404, detail="Genre not found")
+    return genre
+
+
+@router.delete("/genres/{genre_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_genre(
+    genre_id: int,
+    session: AsyncSession = Depends(get_session),
+    _user: User = Depends(get_current_user)
+):
+    """Delete a genre."""
+    deleted = await movie_service.delete_genre(session, genre_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Genre not found")
 
 
 # ----- Movie endpoints -----

@@ -45,6 +45,28 @@ async def list_genres(session: AsyncSession, skip: int = 0, limit: int = 100) ->
     return result.all()
 
 
+async def update_genre(session: AsyncSession, genre_id: int, name: str) -> Genre | None:
+    """Update a genre's name. Returns None if genre not found."""
+    genre = await get_genre_by_id(session, genre_id)
+    if not genre:
+        return None
+    genre.name = name
+    session.add(genre)
+    await session.commit()
+    await session.refresh(genre)
+    return genre
+
+
+async def delete_genre(session: AsyncSession, genre_id: int) -> bool:
+    """Delete a genre by ID. Returns True if deleted, False if not found."""
+    genre = await get_genre_by_id(session, genre_id)
+    if not genre:
+        return False
+    await session.delete(genre)
+    await session.commit()
+    return True
+
+
 # ----- Movie operations -----
 async def get_movie_by_id(session: AsyncSession, movie_id: int) -> Movie | None:
     """Retrieve a movie by its ID, including its genres."""

@@ -45,6 +45,57 @@ class TestGenres:
         )
         assert resp.status_code == 400
 
+    async def test_update_genre(self, client: AsyncClient, auth_headers: dict):
+        """Update a genre name."""
+        create = await client.post(
+            "/movies/genres", json={"name": "OldName"}, headers=auth_headers
+        )
+        gid = create.json()["id"]
+        resp = await client.put(
+            f"/movies/genres/{gid}", json={"name": "NewName"}, headers=auth_headers
+        )
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "NewName"
+
+    async def test_update_genre_not_found(self, client: AsyncClient, auth_headers: dict):
+        """Update non-existent genre returns 404."""
+        resp = await client.put(
+            "/movies/genres/9999", json={"name": "Ghost"}, headers=auth_headers
+        )
+        assert resp.status_code == 404
+
+    async def test_update_genre_duplicate_name(self, client: AsyncClient, auth_headers: dict):
+        """Update genre to an already existing name returns 400."""
+        await client.post(
+            "/movies/genres", json={"name": "First"}, headers=auth_headers
+        )
+        create2 = await client.post(
+            "/movies/genres", json={"name": "Second"}, headers=auth_headers
+        )
+        gid2 = create2.json()["id"]
+        resp = await client.put(
+            f"/movies/genres/{gid2}", json={"name": "First"}, headers=auth_headers
+        )
+        assert resp.status_code == 400
+
+    async def test_delete_genre(self, client: AsyncClient, auth_headers: dict):
+        """Delete a genre."""
+        create = await client.post(
+            "/movies/genres", json={"name": "ToDelete"}, headers=auth_headers
+        )
+        gid = create.json()["id"]
+        resp = await client.delete(f"/movies/genres/{gid}", headers=auth_headers)
+        assert resp.status_code == 204
+        # Verify it's gone
+        list_resp = await client.get("/movies/genres", headers=auth_headers)
+        names = [g["name"] for g in list_resp.json()]
+        assert "ToDelete" not in names
+
+    async def test_delete_genre_not_found(self, client: AsyncClient, auth_headers: dict):
+        """Delete non-existent genre returns 404."""
+        resp = await client.delete("/movies/genres/9999", headers=auth_headers)
+        assert resp.status_code == 404
+
 
 class TestMovies:
     """Tests for movie endpoints."""
